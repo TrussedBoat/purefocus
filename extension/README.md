@@ -1,0 +1,68 @@
+# PureFocus browser extension
+
+Blocks distracting sites, or only their short-video sections. Click the extension's toolbar icon to choose what's blocked:
+
+| Option | When on |
+|--------|---------|
+| YouTube | All of YouTube is blocked |
+| ↳ Shorts | Shorts are hidden and Shorts links go to the YouTube home page |
+| Instagram | All of Instagram is blocked |
+| ↳ Reels | Reels are hidden and Reels links go to the Instagram home page |
+| X (Twitter) | x.com and twitter.com are blocked |
+
+While a site is blocked, its sub-option is locked on, because it's already covered. Its own setting comes back when you unblock the site.
+
+## Install (Chrome, Edge, Brave)
+
+1. Open `chrome://extensions`.
+2. Turn on **Developer mode** (top right).
+3. Click **Load unpacked** and select this `extension/` folder.
+4. Pin PureFocus from the puzzle-piece menu so its icon stays in the toolbar.
+
+After editing any file, click the reload icon on the extension's card.
+
+## Install (Firefox 121 or newer)
+
+Firefox only installs signed add-ons permanently. While developing, you load PureFocus as a **temporary add-on** from the debugging page instead.
+
+1. Type `about:debugging` in the address bar and press Enter.
+2. In the left sidebar, click **This Firefox**.
+3. Under **Temporary Extensions**, click **Load Temporary Add-on…**.
+4. In the file picker, open this `extension/` folder and select `manifest.json`.
+
+PureFocus now appears under **Temporary Extensions**. To put its icon in the toolbar, click the puzzle-piece (Extensions) button, then the gear next to PureFocus, and choose **Pin to Toolbar**.
+
+**Allow it on YouTube and Instagram.** Firefox may not grant site access straight away. If Shorts or Reels still show:
+
+1. Open `about:addons` and click **PureFocus**.
+2. Open the **Permissions** tab.
+3. Turn on access for `youtube.com` and `instagram.com`.
+
+**Things to know about temporary add-ons**
+- It's removed when Firefox closes. Repeat the steps after each restart. Your switch settings are kept, because the add-on has a fixed ID.
+- After editing a file, click **Reload** on its card in `about:debugging`.
+- If something doesn't work, click **Inspect** on the card to open the add-on's console and see its errors.
+
+To install it permanently, it has to be signed through [addons.mozilla.org](https://addons.mozilla.org/developers/). You can sign it for your own use without publishing it on the store.
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `manifest.json` | Declares permissions and wires the files together |
+| `settings.js` | The list of options and their defaults, shared by the other scripts |
+| `popup.html`, `popup.css`, `popup.js` | The settings panel that opens from the toolbar icon |
+| `background.js` | Turns the settings into Chrome blocking and redirect rules |
+| `content.js` | On YouTube and Instagram, leaves Shorts/Reels pages reached by clicking inside the site |
+| `content.css` | Hides Shorts/Reels shelves, feed items and navigation links |
+
+## How a setting change flows
+
+1. You flip a switch, and `popup.js` saves it to `chrome.storage`.
+2. `background.js` notices and rebuilds the network rules. This affects the next page you open.
+3. `content.js` notices on already-open YouTube and Instagram tabs and hides or shows Shorts/Reels right away.
+
+## Adding a site
+
+1. Add an entry to `PF_OPTIONS` and `PF_DEFAULTS` in `settings.js`.
+2. Add its rule to `buildRules` in `background.js`.

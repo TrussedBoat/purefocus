@@ -1,0 +1,35 @@
+/* content.js adds pf-hide-shorts / pf-hide-reels to <html> when the matching
+   option is on. These selectors depend on each site's markup and may need
+   updating when the site changes its layout. */
+
+/* YouTube Shorts */
+html.pf-hide-shorts :is(
+  /* Shorts shelves on home, subscriptions and search */
+  ytd-reel-shelf-renderer,
+  ytd-rich-shelf-renderer[is-shorts],
+  ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+  grid-shelf-view-model:has(a[href^="/shorts/"]),
+  /* Individual Shorts in feeds and search results */
+  ytd-rich-item-renderer:has(a[href^="/shorts/"]),
+  ytd-video-renderer:has(a[href^="/shorts/"]),
+  ytd-grid-video-renderer:has(a[href^="/shorts/"]),
+  /* "Shorts" entry in the sidebar and mini sidebar */
+  ytd-guide-entry-renderer:has(a[title="Shorts"]),
+  ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+  /* Shorts tab on channel pages */
+  yt-tab-shape[tab-title="Shorts"]
+) {
+  display: none !important;
+}
+
+/* Instagram Reels */
+html.pf-hide-reels :is(
+  /* Reels link in the sidebar / bottom bar, and the Reels tab on profiles */
+  a[href$="/reels/"],
+  /* Reel tiles in Explore and profile grids */
+  a[href*="/reel/"],
+  /* Reels in the home feed */
+  article:has(a[href*="/reel/"])
+) {
+  display: none !important;
+}

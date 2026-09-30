@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "PureFocus",
+  "version": "0.2.0",
+  "description": "Blocks distracting sites, or just their short-video sections.",
+  "permissions": ["declarativeNetRequest", "storage"],
+  "host_permissions": ["*://*.youtube.com/*", "*://*.instagram.com/*"],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["settings.js", "background.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "purefocus@local",
+      "strict_min_version": "121.0"
+    }
+  },
+  "action": {
+    "default_title": "PureFocus",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*", "*://*.instagram.com/*"],
+      "js": ["settings.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_start"
+    }
+  ]
+}
