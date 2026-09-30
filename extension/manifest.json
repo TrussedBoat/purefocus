@@ -4,7 +4,12 @@
   "version": "0.2.0",
   "description": "Blocks distracting sites, or just their short-video sections.",
   "permissions": ["declarativeNetRequest", "storage"],
-  "host_permissions": ["*://*.youtube.com/*", "*://*.instagram.com/*"],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.instagram.com/*",
+    "*://*.x.com/*",
+    "*://*.twitter.com/*"
+  ],
   "background": {
     "service_worker": "background.js",
     "scripts": ["settings.js", "background.js"]
@@ -21,10 +26,26 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/*", "*://*.instagram.com/*"],
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.instagram.com/*",
+        "*://*.x.com/*",
+        "*://*.twitter.com/*"
+      ],
       "js": ["settings.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html"],
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.instagram.com/*",
+        "*://*.x.com/*",
+        "*://*.twitter.com/*"
+      ]
     }
   ]
 }

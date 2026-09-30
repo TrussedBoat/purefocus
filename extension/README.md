@@ -32,11 +32,11 @@ Firefox only installs signed add-ons permanently. While developing, you load Pur
 
 PureFocus now appears under **Temporary Extensions**. To put its icon in the toolbar, click the puzzle-piece (Extensions) button, then the gear next to PureFocus, and choose **Pin to Toolbar**.
 
-**Allow it on YouTube and Instagram.** Firefox may not grant site access straight away. If Shorts or Reels still show:
+**Allow it on the blocked sites.** Firefox may not grant site access straight away. If a blocked site or Shorts/Reels still show:
 
 1. Open `about:addons` and click **PureFocus**.
 2. Open the **Permissions** tab.
-3. Turn on access for `youtube.com` and `instagram.com`.
+3. Turn on access for `youtube.com`, `instagram.com`, `x.com` and `twitter.com`.
 
 **Things to know about temporary add-ons**
 - It's removed when Firefox closes. Repeat the steps after each restart. Your switch settings are kept, because the add-on has a fixed ID.
@@ -53,16 +53,18 @@ To install it permanently, it has to be signed through [addons.mozilla.org](http
 | `settings.js` | The list of options and their defaults, shared by the other scripts |
 | `popup.html`, `popup.css`, `popup.js` | The settings panel that opens from the toolbar icon |
 | `background.js` | Turns the settings into Chrome blocking and redirect rules |
-| `content.js` | On YouTube and Instagram, leaves Shorts/Reels pages reached by clicking inside the site |
+| `content.js` | Runs inside the blocked sites and enforces the settings there, including navigation the network rules miss |
+| `blocked.html` | The page shown when a blocked site is caught inside the page |
 | `content.css` | Hides Shorts/Reels shelves, feed items and navigation links |
 
 ## How a setting change flows
 
 1. You flip a switch, and `popup.js` saves it to `chrome.storage`.
 2. `background.js` notices and rebuilds the network rules. This affects the next page you open.
-3. `content.js` notices on already-open YouTube and Instagram tabs and hides or shows Shorts/Reels right away.
+3. `content.js` notices in tabs that are already open. It sends a blocked site's tab to `blocked.html`, and hides or shows Shorts/Reels, right away.
 
 ## Adding a site
 
 1. Add an entry to `PF_OPTIONS` and `PF_DEFAULTS` in `settings.js`.
 2. Add its rule to `buildRules` in `background.js`.
+3. Add its domain to `host_permissions`, `content_scripts.matches` and `web_accessible_resources.matches` in `manifest.json`, and to `SITE` in `content.js`.
