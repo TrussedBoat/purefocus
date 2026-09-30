@@ -6,6 +6,7 @@ Blocks distracting sites, or only their short-video sections. Click the extensio
 |--------|---------|
 | YouTube | All of YouTube is blocked |
 | ↳ Shorts | Shorts are hidden and Shorts links go to the YouTube home page |
+| ↳ Playables | YouTube's games section is hidden and Playables links go to the YouTube home page |
 | Instagram | All of Instagram is blocked |
 | ↳ Reels | Reels are hidden and Reels links go to the Instagram home page |
 | X (Twitter) | x.com and twitter.com are blocked |

@@ -35,8 +35,14 @@ function buildRules(settings) {
   if (settings.youtube) {
     block("youtube.com");
     block("youtu.be");
-  } else if (settings.youtubeShorts) {
-    redirect("||youtube.com/shorts/", "https://www.youtube.com/");
+  } else {
+    if (settings.youtubeShorts) {
+      redirect("||youtube.com/shorts/", "https://www.youtube.com/");
+    }
+    if (settings.youtubePlayables) {
+      // Covers the /playables page and each game at /playables/ID.
+      redirect("||youtube.com/playables", "https://www.youtube.com/");
+    }
   }
 
   if (settings.instagram) {

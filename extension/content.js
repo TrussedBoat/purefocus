@@ -7,25 +7,40 @@
 // own offline cache, and Back/Forward can restore a page from memory. This
 // script catches all of those by checking the settings and the URL itself.
 
+// Each part is a sub-option: while its setting is on, content.css hides it
+// (via cssClass on <html>) and URLs matching isPath go to the site's home.
 const host = location.hostname;
 const SITE = host.endsWith("youtube.com")
   ? {
       siteKey: "youtube",
-      partKey: "youtubeShorts",
-      cssClass: "pf-hide-shorts",
       home: "https://www.youtube.com/",
-      isPartPath: (path) => path.startsWith("/shorts/"),
+      parts: [
+        {
+          key: "youtubeShorts",
+          cssClass: "pf-hide-shorts",
+          isPath: (path) => path.startsWith("/shorts/"),
+        },
+        {
+          key: "youtubePlayables",
+          cssClass: "pf-hide-playables",
+          isPath: (path) => path === "/playables" || path.startsWith("/playables/"),
+        },
+      ],
     }
   : host.endsWith("instagram.com")
   ? {
       siteKey: "instagram",
-      partKey: "instagramReels",
-      cssClass: "pf-hide-reels",
       home: "https://www.instagram.com/",
-      // /reel/ID, /reels/, /username/reel/ID and /username/reels/
-      isPartPath: (path) => /^\/([^/]+\/)?reels?\//.test(path),
+      parts: [
+        {
+          key: "instagramReels",
+          cssClass: "pf-hide-reels",
+          // /reel/ID, /reels/, /username/reel/ID and /username/reels/
+          isPath: (path) => /^\/([^/]+\/)?reels?\//.test(path),
+        },
+      ],
     }
-  : { siteKey: "x" }; // x.com and twitter.com have no sub-option
+  : { siteKey: "x", parts: [] }; // x.com and twitter.com have no sub-options
 
 const BLOCKED_PAGE = chrome.runtime.getURL("blocked.html");
 
@@ -39,12 +54,12 @@ function check() {
     return;
   }
 
-  if (SITE.partKey) {
-    const hideParts = settings[SITE.partKey];
-    // content.css only hides things while this class is on <html>.
-    document.documentElement.classList.toggle(SITE.cssClass, hideParts);
-    if (hideParts && SITE.isPartPath(location.pathname)) {
+  for (const part of SITE.parts) {
+    const hide = settings[part.key];
+    document.documentElement.classList.toggle(part.cssClass, hide);
+    if (hide && part.isPath(location.pathname)) {
       location.replace(SITE.home);
+      return;
     }
   }
 }

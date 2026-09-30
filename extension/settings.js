@@ -3,7 +3,14 @@
 // The options shown in the popup. A child is one part of its parent site,
 // so blocking the parent always blocks the child too.
 const PF_OPTIONS = [
-  { key: "youtube", label: "YouTube", children: [{ key: "youtubeShorts", label: "Shorts" }] },
+  {
+    key: "youtube",
+    label: "YouTube",
+    children: [
+      { key: "youtubeShorts", label: "Shorts" },
+      { key: "youtubePlayables", label: "Playables" },
+    ],
+  },
   { key: "instagram", label: "Instagram", children: [{ key: "instagramReels", label: "Reels" }] },
   { key: "x", label: "X (Twitter)", children: [] },
 ];
@@ -12,6 +19,7 @@ const PF_OPTIONS = [
 const PF_DEFAULTS = {
   youtube: false,
   youtubeShorts: true,
+  youtubePlayables: true,
   instagram: true,
   instagramReels: true,
   x: true,

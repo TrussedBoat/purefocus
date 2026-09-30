@@ -22,6 +22,20 @@ html.pf-hide-shorts :is(
   display: none !important;
 }
 
+/* YouTube Playables */
+html.pf-hide-playables :is(
+  /* "Playables" entry in the sidebar */
+  ytd-guide-entry-renderer:has(a[href^="/playables"]),
+  ytd-mini-guide-entry-renderer:has(a[href^="/playables"]),
+  /* Playables shelves and game tiles on the home page and in search */
+  ytd-rich-section-renderer:has(a[href^="/playables"]),
+  ytd-rich-shelf-renderer:has(a[href^="/playables"]),
+  ytd-rich-item-renderer:has(a[href^="/playables"]),
+  ytd-shelf-renderer:has(a[href^="/playables"])
+) {
+  display: none !important;
+}
+
 /* Instagram Reels */
 html.pf-hide-reels :is(
   /* Reels link in the sidebar / bottom bar, and the Reels tab on profiles */
