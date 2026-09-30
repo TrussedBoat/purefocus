@@ -57,6 +57,22 @@ To install it permanently, it has to be signed through [addons.mozilla.org](http
 | `content.js` | Runs inside the blocked sites and enforces the settings there, including navigation the network rules miss |
 | `blocked.html` | The page shown when a blocked site is caught inside the page |
 | `content.css` | Hides Shorts/Reels shelves, feed items and navigation links |
+| `icons/` | The extension's icon at 16, 32, 48 and 128 px (currently a placeholder) |
+
+## Changing the icon
+
+Replace the four files in `icons/` with your own, keeping the same names and sizes:
+
+| File | Size (px) | Where it shows |
+|------|-----------|----------------|
+| `icon-16.png` | 16 × 16 | Toolbar button |
+| `icon-32.png` | 32 × 32 | Toolbar button on high-resolution screens |
+| `icon-48.png` | 48 × 48 | Extensions page |
+| `icon-128.png` | 128 × 128 | Install dialog and web store |
+
+- Use PNG with a transparent background.
+- If you only have one large image, you can use it for all four. The browser scales it, but small sizes look sharper when made at that size.
+- A new icon only appears after you reload the extension.
 
 ## How a setting change flows
 
