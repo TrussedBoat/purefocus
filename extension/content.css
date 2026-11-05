@@ -74,3 +74,8 @@ html.pf-hide-end-screen .html5-video-player :is(
 ) {
   display: none !important;
 }
+
+/* Set by youtube-layout.js only when no useful visible panels remain. */
+html.pf-hide-suggestions :is(ytd-watch-flexy, ytd-watch-grid) #secondary.pf-collapse-secondary {
+  display: none !important;
+}

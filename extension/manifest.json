@@ -45,7 +45,7 @@
         "*://*.x.com/*",
         "*://*.twitter.com/*"
       ],
-      "js": ["settings.js", "content.js"],
+      "js": ["settings.js", "youtube-layout.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_start"
     }

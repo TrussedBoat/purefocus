@@ -9,12 +9,15 @@
     body { max-width: 1000px; margin: 32px auto; padding: 0 20px; font: 16px/1.5 system-ui; color: #182329; background: #f5f7f8; }
     h1 { line-height: 1.2; } fieldset, section { padding: 20px; margin: 20px 0; border: 1px solid #ccd4d8; border-radius: 12px; background: white; }
     label { display: inline-block; margin: 8px 20px 8px 0; } button { padding: 8px 12px; cursor: pointer; }
+    ytd-playlist-panel-renderer, ytd-live-chat-frame, ytd-engagement-panel-section-list-renderer { display: block; min-height: 24px; }
+    [hidden] { display: none !important; }
     [data-group], [data-keep] { display: block; padding: 12px; margin: 8px; border: 1px solid #bdcacc; border-radius: 6px; background: #e0f1eb; }
     [data-group] { background: #fff0d5; border-color: #dec18b; }
     #results { white-space: pre-wrap; } .failure { color: #a12525; }
     ytd-browse, ytd-watch-flexy, ytd-watch-grid, ytd-rich-grid-renderer { display: block; }
   </style>
   <script defer src="../extension/settings.js"></script>
+  <script defer src="../extension/youtube-layout.js"></script>
   <script defer src="preview.js"></script>
 </head>
 <body>
@@ -36,7 +39,7 @@
     <ytd-watch-flexy>
       <div data-keep>Video details and comments</div>
       <ytd-rich-grid-renderer data-keep>Unrelated watch-page grid outside related videos</ytd-rich-grid-renderer>
-      <div id="secondary">
+      <div class="secondary-preview">
         <ytd-playlist-panel-renderer data-keep>Playlist queue</ytd-playlist-panel-renderer>
         <ytd-live-chat-frame data-keep>Live chat</ytd-live-chat-frame>
         <div><ytd-watch-next-secondary-results-renderer data-group="suggestions">Related videos beside / below the player</ytd-watch-next-secondary-results-renderer></div>
@@ -49,6 +52,20 @@
       <ytd-playlist-panel-renderer data-keep>Playlist queue</ytd-playlist-panel-renderer>
       <div id="related"><ytd-rich-grid-renderer data-group="suggestions">Related videos grid</ytd-rich-grid-renderer></div>
     </ytd-watch-grid>
+  </section>
+  <section>
+    <h2>Secondary column visibility</h2>
+    <p>The sample column below collapses with Suggested videos unless a useful panel is visible.</p>
+    <label><input id="preview-playlist" type="checkbox"> Show playlist</label>
+    <label><input id="preview-chat" type="checkbox"> Show live chat</label>
+    <ytd-watch-flexy id="layout-fixture">
+      <div id="secondary" data-layout-column>
+        <ytd-watch-next-secondary-results-renderer data-group="suggestions">Recommendations in collapsible column</ytd-watch-next-secondary-results-renderer>
+        <div id="chat-container" hidden><ytd-live-chat-frame>Live chat</ytd-live-chat-frame></div>
+        <ytd-playlist-panel-renderer hidden>Playlist queue</ytd-playlist-panel-renderer>
+        <div id="panels"><ytd-engagement-panel-section-list-renderer visibility="ENGAGEMENT_PANEL_VISIBILITY_HIDDEN" hidden>Engagement panel</ytd-engagement-panel-section-list-renderer></div>
+      </div>
+    </ytd-watch-flexy>
   </section>
   <section>
     <h2>Player — normal, theater, or fullscreen</h2>

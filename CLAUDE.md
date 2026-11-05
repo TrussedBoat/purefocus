@@ -47,6 +47,7 @@ The popup (`popup.html/css/js`) writes to `chrome.storage.local`. Both layers wa
 | `settings.js` | `PF_OPTIONS` (what the popup shows) and `PF_DEFAULTS`. Shared by the popup, background and content scripts |
 | `background.js` | Turns settings into network rules (`buildRules`) |
 | `content.js` | Per-site enforcement. `SITE` describes each site and its sub-parts |
+| `youtube-layout.js` | Collapses the watch-page secondary column only when no useful panels are visible; called by existing content checks |
 | `content.css` | Hides Shorts, Playables, Reels and YouTube recommendations while the matching class is on `<html>` |
 | `blocked.html` | Page shown when a whole site is blocked |
 | `popup.*` | Settings panel |
@@ -64,7 +65,7 @@ The popup (`popup.html/css/js`) writes to `chrome.storage.local`. Both layers wa
 
 - **Run it**: Chrome: `chrome://extensions` → Developer mode → Load unpacked → pick `extension/`. Firefox: `about:debugging` → This Firefox → Load Temporary Add-on → pick `manifest.json`. Reload the extension after every edit.
 - **Build / install deps / linter**: none. Node 18+ is only a development test tool, not an extension dependency.
-- **Tests**: from the root, run `node tests/extension.test.cjs` for mocked browser-API tests. Open `tests/preview.html` in Firefox/Chromium for visual toggles and 192 CSS assertions using the production stylesheet. The extension README describes live YouTube checks; fixtures alone cannot verify current YouTube markup.
+- **Tests**: from the root, run `node tests/extension.test.cjs` for mocked browser-API tests. Open `tests/preview.html` in Firefox/Chromium for visual toggles and browser assertions using the production stylesheet and sidebar visibility helper. The extension README describes live YouTube checks; fixtures alone cannot verify current YouTube markup.
 - **Package for Firefox**: `cd extension && zip -r ../purefocus.zip . -x '.*'` (`manifest.json` must be at the zip's top level).
 
 ## Releasing (Firefox)

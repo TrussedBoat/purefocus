@@ -8,7 +8,7 @@ Blocks distracting sites, short-video sections, and YouTube recommendations. Cli
 | ↳ Shorts | Shorts are hidden and Shorts links go to the YouTube home page |
 | ↳ Playables | YouTube's games section is hidden and Playables links go to the YouTube home page |
 | ↳ Home feed | Recommended videos on the YouTube homepage are hidden |
-| ↳ Suggested videos | Recommendations beside or below the watch-page player are hidden |
+| ↳ Suggested videos | Recommendations beside or below the watch-page player are hidden; the column collapses unless useful panels are visible |
 | ↳ End-of-video suggestions | Player recommendation grids, video/playlist end cards, and next-video overlays are hidden |
 | Instagram | All of Instagram is blocked |
 | ↳ Reels | Reels are hidden and Reels links go to the Instagram home page |
@@ -105,7 +105,7 @@ node tests/extension.test.cjs
 
 This checks defaults, saved choices, independent switching, navigation callbacks, parent/child popup behavior, existing redirects, and unchanged network rules using mocked browser APIs.
 
-For a visual check, open `tests/preview.html` in Firefox or Chromium. No Node, extension installation, or server is required. The page loads the production stylesheet, provides three switches, and automatically runs 192 computed-style assertions across all eight combinations. Green samples must remain visible; yellow recommendation samples disappear when their switch is on. Click **Run browser assertions** to repeat the checks. The preview never changes your extension settings.
+For a visual check, open `tests/preview.html` in Firefox or Chromium. No Node, extension installation, or server is required. The page loads the production stylesheet, provides three switches, and automatically runs browser assertions across all eight combinations. Green samples must remain visible; yellow recommendation samples disappear when their switch is on. Click **Run browser assertions** to repeat the checks. The preview never changes your extension settings. The sidebar example also has playlist/chat controls to preview when the column stays visible or collapses.
 
 You can also serve the repository root with `python3 -m http.server 8765 --bind 127.0.0.1` and open `http://127.0.0.1:8765/tests/preview.html`.
 
@@ -117,5 +117,7 @@ Fixtures check CSS behavior against representative markup; they cannot detect Yo
 - Check the homepage, search, subscriptions, channel videos, ordinary watch pages, playlists, and live chat. Only the selected recommendation surfaces should disappear.
 - Check player end cards and post-play suggestions in normal, theater, and fullscreen modes, with autoplay both enabled and disabled. Controls, captions, subscribe buttons, and external links should remain usable; playback behavior should be unchanged.
 - Block and unblock all of YouTube. Child switches must lock on while covered, then return to their saved preferences.
+
+The sidebar visibility helper in `youtube-layout.js` reuses the existing navigation checks to preserve visible playlists, live chat, and auxiliary panels. Hidden placeholders do not keep an empty column open.
 
 Keep selector fixes in `content.css`, and update the fixtures to represent any new markup variant.

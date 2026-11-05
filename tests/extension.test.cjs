@@ -24,6 +24,7 @@ function harness(saved = {}, hostname = 'www.youtube.com') {
     console,
     location: { hostname, pathname: '/watch', replace: (url) => redirects.push(url) },
     document: {
+      querySelectorAll: () => [],
       documentElement: { classList: { toggle(name, on) { on ? active.add(name) : active.delete(name); } } },
       getElementById: () => list,
       createElement(tag) { const node = element(tag); elements.push(node); return node; },
@@ -42,6 +43,7 @@ function harness(saved = {}, hostname = 'www.youtube.com') {
     setInterval(fn) { listeners.interval = fn; },
   });
   vm.runInContext(source('settings.js'), context);
+  vm.runInContext(source('youtube-layout.js'), context);
   const run = (code) => vm.runInContext(code, context);
   return { saved, active, redirects, listeners, elements, list, context, run };
 }

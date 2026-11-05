@@ -18,6 +18,10 @@ for (const group of groups) {
 }
 function applyControls() {
   for (const group of groups) document.documentElement.classList.toggle(group.css, group.toggle.checked);
+  const fixture = document.getElementById('layout-fixture');
+  fixture.querySelector('ytd-playlist-panel-renderer').hidden = !document.getElementById('preview-playlist').checked;
+  fixture.querySelector('#chat-container').hidden = !document.getElementById('preview-chat').checked;
+  pfUpdateYoutubeSecondary(groups[1].toggle.checked);
 }
 function visible(node) {
   for (let element = node; element; element = element.parentElement) {
@@ -39,6 +43,7 @@ function runTests() {
     // Exercise all eight combinations, checking independence and restoration.
     for (let mask = 0; mask < 8; mask++) {
       groups.forEach((group, index) => document.documentElement.classList.toggle(group.css, Boolean(mask & (1 << index))));
+      pfUpdateYoutubeSecondary(Boolean(mask & 2));
       groups.forEach((group, index) => {
         for (const node of document.querySelectorAll(`[data-group="${group.group}"]`)) {
           assert(visible(node) === !(mask & (1 << index)), `Combination ${mask}: ${node.textContent}`);
@@ -48,6 +53,50 @@ function runTests() {
         assert(visible(node), `Combination ${mask} unexpectedly hid: ${node.textContent}`);
       }
     }
+    document.documentElement.classList.add('pf-hide-suggestions');
+    const column = document.querySelector('[data-layout-column]');
+    const playlist = column.querySelector('ytd-playlist-panel-renderer');
+    const chatContainer = column.querySelector('#chat-container');
+    const chat = column.querySelector('ytd-live-chat-frame');
+    const engagement = column.querySelector('ytd-engagement-panel-section-list-renderer');
+    playlist.hidden = true;
+    chatContainer.hidden = true;
+    const checkColumn = (expected, description) => {
+      pfUpdateYoutubeSecondary(true);
+      assert(visible(column) === expected, description);
+    };
+    checkColumn(false, 'Inactive panels must not preserve the column');
+    playlist.hidden = false;
+    checkColumn(true, 'Visible playlist preserves column');
+    playlist.hidden = true;
+    checkColumn(false, 'Hiding playlist collapses column again');
+    chatContainer.hidden = false;
+    checkColumn(true, 'Visible chat restores column');
+    chatContainer.setAttribute('aria-hidden', 'true');
+    checkColumn(false, 'Aria-hidden chat does not preserve column');
+    chatContainer.removeAttribute('aria-hidden');
+    checkColumn(true, 'Restoring chat accessibility restores column');
+    chatContainer.style.display = 'none';
+    checkColumn(false, 'CSS-hidden chat wrapper does not preserve column');
+    chatContainer.style.display = '';
+    chat.style.visibility = 'hidden';
+    checkColumn(false, 'Invisible chat does not preserve column');
+    chat.style.visibility = '';
+    chatContainer.hidden = true;
+    engagement.hidden = false;
+    engagement.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED');
+    checkColumn(true, 'Expanded engagement panel preserves column');
+    engagement.hidden = true;
+    engagement.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
+    const dynamicPanel = document.createElement('div');
+    dynamicPanel.textContent = 'New useful panel';
+    column.querySelector('#panels').append(dynamicPanel);
+    checkColumn(true, 'Dynamically inserted useful panel restores column');
+    dynamicPanel.remove();
+    checkColumn(false, 'Removing useful panel collapses column');
+    document.documentElement.classList.remove('pf-hide-suggestions');
+    pfUpdateYoutubeSecondary(false);
+    assert(visible(column), 'Disabling suggestions blocking restores column');
   } finally {
     dynamic.remove();
     applyControls();
@@ -58,5 +107,8 @@ function runTests() {
   document.documentElement.dataset.testResult = failures.length ? 'fail' : 'pass';
 }
 document.getElementById('run').addEventListener('click', runTests);
+for (const id of ['preview-playlist', 'preview-chat']) {
+  document.getElementById(id).addEventListener('change', applyControls);
+}
 applyControls();
 runTests();

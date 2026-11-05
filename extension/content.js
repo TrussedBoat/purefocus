@@ -66,6 +66,9 @@ function check() {
       return;
     }
   }
+  if (SITE.siteKey === "youtube") {
+    pfUpdateYoutubeSecondary(settings.youtubeSuggestions);
+  }
 }
 
 async function loadSettings() {
