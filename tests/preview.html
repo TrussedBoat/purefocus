@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PureFocus recommendation preview</title>
+  <link rel="stylesheet" href="../extension/content.css">
+  <style>
+    body { max-width: 1000px; margin: 32px auto; padding: 0 20px; font: 16px/1.5 system-ui; color: #182329; background: #f5f7f8; }
+    h1 { line-height: 1.2; } fieldset, section { padding: 20px; margin: 20px 0; border: 1px solid #ccd4d8; border-radius: 12px; background: white; }
+    label { display: inline-block; margin: 8px 20px 8px 0; } button { padding: 8px 12px; cursor: pointer; }
+    [data-group], [data-keep] { display: block; padding: 12px; margin: 8px; border: 1px solid #bdcacc; border-radius: 6px; background: #e0f1eb; }
+    [data-group] { background: #fff0d5; border-color: #dec18b; }
+    #results { white-space: pre-wrap; } .failure { color: #a12525; }
+    ytd-browse, ytd-watch-flexy, ytd-watch-grid, ytd-rich-grid-renderer { display: block; }
+  </style>
+  <script defer src="../extension/settings.js"></script>
+  <script defer src="preview.js"></script>
+</head>
+<body>
+  <h1>YouTube recommendation preview</h1>
+  <p>This dummy page loads PureFocus’s actual CSS. Yellow samples are recommendations; green samples should stay visible. It does not load YouTube or change extension settings.</p>
+  <fieldset id="controls"><legend>Blocked areas</legend></fieldset>
+  <button id="run" type="button">Run browser assertions</button>
+  <p id="results" role="status">Waiting for tests…</p>
+  <section>
+    <h2>Home and other browse pages</h2>
+    <nav data-keep>Navigation and search</nav>
+    <ytd-browse page-subtype="home"><ytd-rich-grid-renderer data-group="home">Homepage recommendations</ytd-rich-grid-renderer></ytd-browse>
+    <ytd-browse page-subtype="subscriptions"><ytd-rich-grid-renderer data-keep>Subscriptions grid</ytd-rich-grid-renderer></ytd-browse>
+    <ytd-browse page-subtype="channels"><ytd-rich-grid-renderer data-keep>Channel videos</ytd-rich-grid-renderer></ytd-browse>
+    <ytd-search><ytd-video-renderer data-keep>Search result</ytd-video-renderer></ytd-search>
+  </section>
+  <section>
+    <h2>Watch page — standard layout</h2>
+    <ytd-watch-flexy>
+      <div data-keep>Video details and comments</div>
+      <ytd-rich-grid-renderer data-keep>Unrelated watch-page grid outside related videos</ytd-rich-grid-renderer>
+      <div id="secondary">
+        <ytd-playlist-panel-renderer data-keep>Playlist queue</ytd-playlist-panel-renderer>
+        <ytd-live-chat-frame data-keep>Live chat</ytd-live-chat-frame>
+        <div><ytd-watch-next-secondary-results-renderer data-group="suggestions">Related videos beside / below the player</ytd-watch-next-secondary-results-renderer></div>
+      </div>
+    </ytd-watch-flexy>
+  </section>
+  <section>
+    <h2>Watch page — grid layout</h2>
+    <ytd-watch-grid>
+      <ytd-playlist-panel-renderer data-keep>Playlist queue</ytd-playlist-panel-renderer>
+      <div id="related"><ytd-rich-grid-renderer data-group="suggestions">Related videos grid</ytd-rich-grid-renderer></div>
+    </ytd-watch-grid>
+  </section>
+  <section>
+    <h2>Player — normal, theater, or fullscreen</h2>
+    <div class="html5-video-player">
+      <div class="ytp-chrome-bottom" data-keep>Play, volume, timeline, settings, fullscreen</div>
+      <div class="ytp-caption-window-container" data-keep>Captions</div>
+      <a class="ytp-videowall-still" data-group="end">Post-play recommendation tile</a>
+      <div class="ytp-ce-video" data-group="end">Creator video end card</div>
+      <div class="ytp-ce-playlist" data-group="end">Creator playlist end card</div>
+      <div class="ytp-upnext" data-group="end">Next-video preview</div>
+      <div class="ytp-autonav-endscreen" data-group="end">Autoplay next-video overlay</div>
+      <div class="ytp-ce-channel" data-keep>Creator subscribe button</div>
+      <div class="ytp-ce-website" data-keep>External-link end card</div>
+    </div>
+    <div class="ytp-ce-video" data-keep>Unrelated element outside the player</div>
+    <ytd-watch-next-secondary-results-renderer data-keep>Unrelated recommendations outside a watch page</ytd-watch-next-secondary-results-renderer>
+  </section>
+</body>
+</html>
