@@ -8,13 +8,17 @@
 // script catches all of those by checking the settings and the URL itself.
 
 // Each part is a sub-option: while its setting is on, content.css hides it
-// (via cssClass on <html>) and URLs matching isPath go to the site's home.
+// (via cssClass on <html>). Optional isPath redirects blocked section URLs
+// to the site's home; presentation-only parts never redirect.
 const host = location.hostname;
 const SITE = host.endsWith("youtube.com")
   ? {
       siteKey: "youtube",
       home: "https://www.youtube.com/",
       parts: [
+        { key: "youtubeHomeFeed", cssClass: "pf-hide-home-feed" },
+        { key: "youtubeSuggestions", cssClass: "pf-hide-suggestions" },
+        { key: "youtubeEndScreen", cssClass: "pf-hide-end-screen" },
         {
           key: "youtubeShorts",
           cssClass: "pf-hide-shorts",
@@ -57,7 +61,7 @@ function check() {
   for (const part of SITE.parts) {
     const hide = settings[part.key];
     document.documentElement.classList.toggle(part.cssClass, hide);
-    if (hide && part.isPath(location.pathname)) {
+    if (hide && part.isPath?.(location.pathname)) {
       location.replace(SITE.home);
       return;
     }

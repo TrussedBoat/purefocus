@@ -1,4 +1,4 @@
-/* content.js adds pf-hide-shorts / pf-hide-reels to <html> when the matching
+/* content.js adds pf-hide-* classes to <html> when the matching
    option is on. These selectors depend on each site's markup and may need
    updating when the site changes its layout. */
 
@@ -44,6 +44,33 @@ html.pf-hide-reels :is(
   a[href*="/reel/"],
   /* Reels in the home feed */
   article:has(a[href*="/reel/"])
+) {
+  display: none !important;
+}
+
+/* YouTube home feed only: other browse pages also use rich grids. */
+html.pf-hide-home-feed ytd-browse[page-subtype="home"] ytd-rich-grid-renderer {
+  display: none !important;
+}
+
+/* Watch-page recommendations. Keep the secondary column itself available
+   for playlist queues and live chat. Both player layouts occur on desktop. */
+html.pf-hide-suggestions :is(ytd-watch-flexy, ytd-watch-grid) :is(
+  ytd-watch-next-secondary-results-renderer,
+  #related ytd-rich-grid-renderer
+) {
+  display: none !important;
+}
+
+/* Player recommendation surfaces, including theater/fullscreen. Do not hide
+   the player, its controls, or creator subscribe/external-link end cards.
+   This only hides UI: YouTube's autoplay setting still controls playback. */
+html.pf-hide-end-screen .html5-video-player :is(
+  .ytp-videowall-still,
+  .ytp-ce-video,
+  .ytp-ce-playlist,
+  .ytp-upnext,
+  .ytp-autonav-endscreen
 ) {
   display: none !important;
 }
