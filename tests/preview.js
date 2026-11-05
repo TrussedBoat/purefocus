@@ -29,7 +29,11 @@ function visible(node) {
   }
   return true;
 }
-function runTests() {
+let runningTests = false;
+async function runTests() {
+  if (runningTests) return;
+  runningTests = true;
+  document.getElementById('run').disabled = true;
   let count = 0;
   const failures = [];
   const assert = (condition, description) => { count++; if (!condition) failures.push(description); };
@@ -97,7 +101,12 @@ function runTests() {
     document.documentElement.classList.remove('pf-hide-suggestions');
     pfUpdateYoutubeSecondary(false);
     assert(visible(column), 'Disabling suggestions blocking restores column');
+    await runWatcherAssertions(assert);
+  } catch (error) {
+    assert(false, `Browser test error: ${error.message}`);
   } finally {
+    runningTests = false;
+    document.getElementById('run').disabled = false;
     dynamic.remove();
     applyControls();
   }
@@ -105,6 +114,82 @@ function runTests() {
   results.classList.toggle('failure', failures.length > 0);
   results.textContent = failures.length ? `${failures.length} of ${count} assertions failed:\n${failures.join('\n')}` : `PASS — ${count} browser assertions across all eight switch combinations.`;
   document.documentElement.dataset.testResult = failures.length ? 'fail' : 'pass';
+}
+// Exercise real MutationObservers and rendering frames, rather than manually
+// calling the layout helper after changing the fixture.
+async function runWatcherAssertions(assert) {
+  const column = document.querySelector('[data-layout-column]');
+  const playlist = column.querySelector('ytd-playlist-panel-renderer');
+  const chatContainer = column.querySelector('#chat-container');
+  const originalUpdate = pfUpdateYoutubeSecondary;
+  let measurements = 0;
+  let blocked = true;
+  let replacement = null;
+  let extra = null;
+  pfUpdateYoutubeSecondary = (...args) => { measurements++; originalUpdate(...args); };
+  const watcher = pfCreateYoutubeLayoutWatcher(() => blocked);
+  const frames = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  try {
+    document.documentElement.classList.add('pf-hide-suggestions');
+    playlist.hidden = true;
+    chatContainer.hidden = true;
+    watcher.refresh();
+    watcher.refresh();
+    await frames();
+    assert(!visible(column), 'Observer startup collapses empty column');
+    assert(measurements === 1, 'Startup requests coalesce into one measurement');
+    await frames();
+    assert(measurements === 1, 'Our layout changes must not cause observer feedback');
+    const recommendation = column.querySelector('ytd-watch-next-secondary-results-renderer');
+    recommendation.append(document.createElement('span'));
+    recommendation.lastElementChild.remove();
+    await frames();
+    assert(measurements === 1, 'Recommendation changes do not trigger measurements');
+    playlist.hidden = false;
+    await frames();
+    assert(visible(column), 'Observer restores newly visible playlist');
+    playlist.hidden = true;
+    await frames();
+    assert(!visible(column), 'Observer collapses hidden playlist');
+    chatContainer.hidden = false;
+    await frames();
+    assert(visible(column), 'Observer restores newly visible chat');
+    chatContainer.style.display = 'none';
+    await frames();
+    assert(!visible(column), 'Observer detects CSS-hidden chat wrapper');
+    chatContainer.style.display = '';
+    chatContainer.hidden = true;
+    extra = document.createElement('div');
+    extra.textContent = 'Useful panel added after load';
+    column.querySelector('#panels').append(extra);
+    await frames();
+    assert(visible(column), 'Observer detects late useful panel insertion');
+    extra.remove();
+    await frames();
+    assert(!visible(column), 'Observer detects useful panel removal');
+    replacement = column.cloneNode(true);
+    column.replaceWith(replacement);
+    await frames();
+    replacement.querySelector('ytd-playlist-panel-renderer').hidden = false;
+    await frames();
+    assert(visible(replacement), 'Observer rebinds to replacement secondary column');
+    blocked = false;
+    watcher.refresh();
+    await frames();
+    const previousMeasurements = measurements;
+    replacement.querySelector('ytd-playlist-panel-renderer').hidden = true;
+    await frames();
+    assert(visible(replacement), 'Disabling blocking restores column');
+    assert(measurements === previousMeasurements, 'Disabling blocking disconnects observers');
+  } finally {
+    watcher.stop();
+    pfUpdateYoutubeSecondary = originalUpdate;
+    extra?.remove();
+    if (replacement?.isConnected) replacement.replaceWith(column);
+    playlist.hidden = true;
+    chatContainer.hidden = true;
+    chatContainer.style.display = '';
+  }
 }
 document.getElementById('run').addEventListener('click', runTests);
 for (const id of ['preview-playlist', 'preview-chat']) {

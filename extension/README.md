@@ -105,7 +105,7 @@ node tests/extension.test.cjs
 
 This checks defaults, saved choices, independent switching, navigation callbacks, parent/child popup behavior, existing redirects, and unchanged network rules using mocked browser APIs.
 
-For a visual check, open `tests/preview.html` in Firefox or Chromium. No Node, extension installation, or server is required. The page loads the production stylesheet, provides three switches, and automatically runs browser assertions across all eight combinations. Green samples must remain visible; yellow recommendation samples disappear when their switch is on. Click **Run browser assertions** to repeat the checks. The preview never changes your extension settings. The sidebar example also has playlist/chat controls to preview when the column stays visible or collapses.
+For a visual check, open `tests/preview.html` in Firefox or Chromium. No Node, extension installation, or server is required. The page loads the production stylesheet, provides three switches, and automatically runs browser assertions across all eight combinations. Green samples must remain visible; yellow recommendation samples disappear when their switch is on. Click **Run browser assertions** to repeat the checks. The preview never changes your extension settings. The browser assertions also exercise actual mutation observers, including idle behavior, panel insertion/removal, replacement columns, and disabling observation. The sidebar example also has playlist/chat controls to preview when the column stays visible or collapses.
 
 You can also serve the repository root with `python3 -m http.server 8765 --bind 127.0.0.1` and open `http://127.0.0.1:8765/tests/preview.html`.
 
@@ -118,6 +118,6 @@ Fixtures check CSS behavior against representative markup; they cannot detect Yo
 - Check player end cards and post-play suggestions in normal, theater, and fullscreen modes, with autoplay both enabled and disabled. Controls, captions, subscribe buttons, and external links should remain usable; playback behavior should be unchanged.
 - Block and unblock all of YouTube. Child switches must lock on while covered, then return to their saved preferences.
 
-The sidebar visibility helper in `youtube-layout.js` reuses the existing navigation checks to preserve visible playlists, live chat, and auxiliary panels. Hidden placeholders do not keep an empty column open.
+The sidebar visibility helper in `youtube-layout.js` checks on initial load, navigation, settings changes, resizing, and relevant sidebar mutations. It preserves visible playlists, live chat, and auxiliary panels. Hidden placeholders do not keep an empty column open. Changes are grouped into one rendering frame, recommendation-feed mutations are ignored, and observers disconnect while applying our own layout classes to avoid feedback loops. The existing URL fallback only compares the URL while a page is unchanged; it does no sidebar scans or layout measurements.
 
 Keep selector fixes in `content.css`, and update the fixtures to represent any new markup variant.

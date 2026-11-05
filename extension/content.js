@@ -49,6 +49,9 @@ const SITE = host.endsWith("youtube.com")
 const BLOCKED_PAGE = chrome.runtime.getURL("blocked.html");
 
 let settings = null; // null until loaded, so nothing is blocked by mistake
+const youtubeLayout = SITE.siteKey === "youtube"
+  ? pfCreateYoutubeLayoutWatcher(() => Boolean(settings && !settings.youtube && settings.youtubeSuggestions && location.pathname === "/watch"))
+  : null;
 
 function check() {
   if (!settings) return;
@@ -66,17 +69,32 @@ function check() {
       return;
     }
   }
-  if (SITE.siteKey === "youtube") {
-    pfUpdateYoutubeSecondary(settings.youtubeSuggestions);
-  }
 }
 
 async function loadSettings() {
   settings = await chrome.storage.local.get(PF_DEFAULTS);
   check();
+  youtubeLayout?.refresh();
+}
+
+function onNavigation() {
+  check();
+  youtubeLayout?.refresh();
 }
 
 loadSettings();
 chrome.storage.onChanged.addListener(loadSettings); // popup toggled something
-window.addEventListener("pageshow", check); // page restored by Back/Forward
-setInterval(check, 250); // catch in-app navigation
+window.addEventListener("pageshow", onNavigation); // Back/Forward restore
+if (youtubeLayout) {
+  document.addEventListener("DOMContentLoaded", onNavigation);
+  document.addEventListener("yt-navigate-finish", onNavigation);
+  window.addEventListener("resize", () => youtubeLayout.refresh());
+}
+// Fallback for sites/navigation that do not emit an event. An unchanged URL
+// does no DOM work and never triggers sidebar measurements.
+let previousUrl = location.href;
+setInterval(() => {
+  if (location.href === previousUrl) return;
+  previousUrl = location.href;
+  onNavigation();
+}, 250);

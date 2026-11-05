@@ -11,6 +11,9 @@ function harness(saved = {}, hostname = 'www.youtube.com') {
   const redirects = [];
   const listeners = {};
   const elements = [];
+  const frames = new Map();
+  const observers = [];
+  let nextFrame = 0;
   function element(tag) {
     return {
       tag, children: [], classList: { add() {} },
@@ -22,9 +25,10 @@ function harness(saved = {}, hostname = 'www.youtube.com') {
   const list = element('ul');
   const context = vm.createContext({
     console,
-    location: { hostname, pathname: '/watch', replace: (url) => redirects.push(url) },
+    location: { hostname, pathname: '/watch', search: '', get href() { return `https://${this.hostname}${this.pathname}${this.search}`; }, replace: (url) => redirects.push(url) },
     document: {
       querySelectorAll: () => [],
+      addEventListener(type, fn) { listeners[type] = fn; },
       documentElement: { classList: { toggle(name, on) { on ? active.add(name) : active.delete(name); } } },
       getElementById: () => list,
       createElement(tag) { const node = element(tag); elements.push(node); return node; },
@@ -41,11 +45,24 @@ function harness(saved = {}, hostname = 'www.youtube.com') {
     },
     window: { addEventListener(type, fn) { listeners[type] = fn; } },
     setInterval(fn) { listeners.interval = fn; },
+    requestAnimationFrame(fn) { frames.set(++nextFrame, fn); return nextFrame; },
+    cancelAnimationFrame(id) { frames.delete(id); },
+    MutationObserver: class {
+      constructor(callback) { this.callback = callback; this.targets = []; observers.push(this); }
+      observe(target, options) { this.targets.push({ target, options }); }
+      disconnect() { this.targets = []; }
+      emit(records) { if (this.targets.length) this.callback(records); }
+    },
   });
   vm.runInContext(source('settings.js'), context);
   vm.runInContext(source('youtube-layout.js'), context);
   const run = (code) => vm.runInContext(code, context);
-  return { saved, active, redirects, listeners, elements, list, context, run };
+  function flushFrame() {
+    const callbacks = [...frames.values()];
+    frames.clear();
+    for (const callback of callbacks) callback();
+  }
+  return { saved, active, redirects, listeners, elements, list, context, run, observers, frames, flushFrame };
 }
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
@@ -129,4 +146,96 @@ test('presentation toggles leave network rules unchanged', () => {
     const rules = (enabled) => h.run(`JSON.stringify(buildRules({ ...PF_DEFAULTS, youtube: ${youtube}, ${keys.map((key) => `${key}: ${enabled}`).join(', ')} }))`);
     assert.equal(rules(true), rules(false));
   }
+});
+
+
+test('idle URL checks do no sidebar measurement; events coalesce into one frame', async () => {
+  const h = harness();
+  let measurements = 0;
+  h.context.pfUpdateYoutubeSecondary = () => { measurements++; };
+  h.run(source('content.js'));
+  await settle();
+  h.flushFrame();
+  assert.equal(measurements, 1);
+  for (let index = 0; index < 1000; index++) h.listeners.interval();
+  h.flushFrame();
+  assert.equal(measurements, 1, 'an unchanged page must stay idle');
+  h.listeners['yt-navigate-finish']();
+  h.listeners.pageshow();
+  h.listeners.resize();
+  h.flushFrame();
+  assert.equal(measurements, 2, 'events in one frame should coalesce');
+  h.context.location.search = '?v=another-video';
+  h.listeners.interval();
+  h.flushFrame();
+  assert.equal(measurements, 3, 'fallback detects a new video even at the same path');
+  h.saved.youtubeSuggestions = false;
+  await h.listeners.storage();
+  h.flushFrame();
+  assert.equal(measurements, 4);
+  assert.ok(h.observers.every((observer) => observer.targets.length === 0));
+});
+
+test('sidebar watcher ignores recommendations, handles panels and replacements, and stops cleanly', () => {
+  const h = harness();
+  const page = {};
+  const column = { classList: { remove() {} } };
+  h.context.document.querySelectorAll = (selector) => selector.includes('#secondary') ? [column] : [page];
+  let measurements = 0;
+  h.context.pfUpdateYoutubeSecondary = () => { measurements++; };
+  const watcher = h.run('pfCreateYoutubeLayoutWatcher(() => true)');
+  watcher.refresh();
+  h.flushFrame();
+  const structure = h.observers[0];
+  const panels = h.observers[1];
+  assert.equal(panels.targets[0].target, column);
+  assert.equal(structure.targets[0].target, page);
+  const target = (recommendations, useful) => ({
+    nodeType: 1,
+    closest: () => recommendations ? {} : null,
+    matches: () => useful,
+    querySelector: () => null,
+  });
+  panels.emit([{ type: 'attributes', target: target(true, false) }]);
+  panels.emit([{ type: 'attributes', target: target(false, false) }]);
+  h.flushFrame();
+  assert.equal(measurements, 1, 'recommendations and decorative changes must not measure');
+  panels.emit([{ type: 'attributes', target: target(false, true) }]);
+  panels.emit([{ type: 'attributes', target: target(false, true) }]);
+  assert.equal(h.frames.size, 1);
+  h.flushFrame();
+  assert.equal(measurements, 2);
+  structure.emit([{ target: target(false, false), addedNodes: [target(false, true)], removedNodes: [] }]);
+  h.flushFrame();
+  assert.equal(measurements, 3, 'replacement columns trigger rebinding');
+  watcher.refresh();
+  watcher.stop();
+  h.flushFrame();
+  assert.equal(measurements, 3, 'stop cancels pending work');
+  assert.ok(h.observers.every((observer) => observer.targets.length === 0));
+});
+
+
+test('watcher discovers a late watch-page shell, then narrows observation to that page', () => {
+  const h = harness();
+  let ready = false;
+  const page = {};
+  const column = { classList: { remove() {} } };
+  h.context.document.querySelectorAll = (selector) => ready ? (selector.includes('#secondary') ? [column] : [page]) : [];
+  h.context.pfUpdateYoutubeSecondary = () => {};
+  const watcher = h.run('pfCreateYoutubeLayoutWatcher(() => true)');
+  watcher.refresh();
+  h.flushFrame();
+  const structure = h.observers[0];
+  assert.equal(structure.targets[0].target, h.context.document.documentElement);
+  ready = true;
+  structure.emit([{
+    target: { nodeType: 1, closest: () => null },
+    addedNodes: [{ nodeType: 1, matches: () => true }], removedNodes: [],
+  }]);
+  h.flushFrame();
+  assert.equal(structure.targets.length, 1);
+  assert.equal(structure.targets[0].target, page);
+  assert.equal(h.observers[1].targets[0].target, column);
+  watcher.stop();
 });
