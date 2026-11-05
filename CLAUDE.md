@@ -21,6 +21,9 @@ Clicking the toolbar icon opens a panel with one switch per option. Switched on 
 | YouTube | All of youtube.com and youtu.be | off |
 | ↳ Shorts | `/shorts/` | on |
 | ↳ Playables | `/playables` | on |
+| ↳ Home feed | Homepage recommendations | on |
+| ↳ Suggested videos | Watch-page recommendations beside/below the player | on |
+| ↳ End-of-video suggestions | Player video/playlist end cards, recommendation grids and next-video overlays | on |
 | Instagram | All of instagram.com | on |
 | ↳ Reels | `/reel/`, `/reels/` | on |
 | X (Twitter) | x.com and twitter.com | on |
@@ -32,7 +35,7 @@ A sub-option is part of its parent site. While the parent is blocked, the sub-op
 Two layers enforce the settings, because neither is enough alone:
 
 1. **Network rules** (`background.js`): rebuilds Chrome `declarativeNetRequest` dynamic rules from the saved settings every time one changes. Only acts when the browser loads a fresh page.
-2. **Page script** (`content.js` + `content.css`): runs inside the blocked sites. Catches what the network rules miss: these sites are single-page apps (the URL changes without a page load), YouTube can serve itself from its own cache, and Back/Forward restores pages from memory. A fully blocked site is replaced by `blocked.html`. A blocked section is hidden with CSS and its URLs redirect to the site's home page.
+2. **Page script** (`content.js` + `content.css`): runs inside the blocked sites. Catches what the network rules miss: these sites are single-page apps (the URL changes without a page load), YouTube can serve itself from its own cache, and Back/Forward restores pages from memory. A fully blocked site is replaced by `blocked.html`. A blocked section is hidden with CSS and, if it has an `isPath` matcher, its URLs redirect to the site's home page. YouTube recommendation options only hide UI and never change autoplay or network rules.
 
 The popup (`popup.html/css/js`) writes to `chrome.storage.local`. Both layers watch storage, so a change applies right away to open tabs.
 
@@ -44,7 +47,7 @@ The popup (`popup.html/css/js`) writes to `chrome.storage.local`. Both layers wa
 | `settings.js` | `PF_OPTIONS` (what the popup shows) and `PF_DEFAULTS`. Shared by the popup, background and content scripts |
 | `background.js` | Turns settings into network rules (`buildRules`) |
 | `content.js` | Per-site enforcement. `SITE` describes each site and its sub-parts |
-| `content.css` | Hides Shorts, Playables and Reels while the matching class is on `<html>` |
+| `content.css` | Hides Shorts, Playables, Reels and YouTube recommendations while the matching class is on `<html>` |
 | `blocked.html` | Page shown when a whole site is blocked |
 | `popup.*` | Settings panel |
 | `icons/` | Extension icon at 16, 32, 48 and 128 px |
@@ -53,14 +56,15 @@ The popup (`popup.html/css/js`) writes to `chrome.storage.local`. Both layers wa
 ### Adding a site or sub-option
 
 1. Add it to `PF_OPTIONS` and `PF_DEFAULTS` in `settings.js`.
-2. Add its rule to `buildRules` in `background.js`.
+2. For URL blocking/redirects, add its rule to `buildRules` in `background.js`. CSS-only parts omit `isPath` and need no network rule.
 3. Add its domain to `host_permissions`, `content_scripts.matches` and `web_accessible_resources.matches` in `manifest.json`, and describe it in `SITE` in `content.js`.
 4. For a hideable section, add a `pf-hide-...` rule to `content.css`.
 
 ## Development
 
 - **Run it**: Chrome: `chrome://extensions` → Developer mode → Load unpacked → pick `extension/`. Firefox: `about:debugging` → This Firefox → Load Temporary Add-on → pick `manifest.json`. Reload the extension after every edit.
-- **Build / install deps / tests / linter**: none exist. The scripts use `chrome.*` APIs, so they only run inside a browser. For a quick check, serve `extension/` with `python3 -m http.server` and fake `chrome.storage`.
+- **Build / install deps / linter**: none. Node 18+ is only a development test tool, not an extension dependency.
+- **Tests**: from the root, run `node tests/extension.test.cjs` for mocked browser-API tests. Open `tests/preview.html` in Firefox/Chromium for visual toggles and 192 CSS assertions using the production stylesheet. The extension README describes live YouTube checks; fixtures alone cannot verify current YouTube markup.
 - **Package for Firefox**: `cd extension && zip -r ../purefocus.zip . -x '.*'` (`manifest.json` must be at the zip's top level).
 
 ## Releasing (Firefox)
@@ -77,7 +81,7 @@ The add-on ID `purefocus@aligorkem` is fixed by the first upload. Never change i
 ## Conventions and Gotchas
 
 - Everything about a setting's name lives in `settings.js`. Do not hard-code option keys elsewhere without also updating it.
-- The CSS selectors for Shorts, Playables and Reels depend on each site's internal markup and break when the sites change. Fix them in `content.css`. Instagram's feed is the least reliable.
+- The CSS selectors for Shorts, Playables, Reels and YouTube recommendations depend on each site's internal markup and break when the sites change. Fix them in `content.css`. Instagram's feed is the least reliable.
 - The sidebar entry and channel tab for Shorts match the English word "Shorts", so they stay visible if YouTube is in another language.
 - Network rules affect only the next page load. The page script handles tabs that are already open.
 
