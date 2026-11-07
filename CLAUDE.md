@@ -8,6 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Current version: **0.2.0** (`extension/manifest.json`). It is a browser extension only. The DNS server idea (below) is not started.
 
+## Current development context (2026-11-07)
+
+- Active feature branch: `feature/youtube-recommendation-blocking`. Latest implementation commit: `0133a26` (event-driven sidebar updates).
+- The recommendation controls and sidebar changes are not released. The manifest still says `0.2.0`; the existing `releases/purefocus-0.2.0.xpi` predates this work and must not be treated as a package of the feature branch.
+- Last verified on 2026-11-06: nine Node tests and 225 browser fixture assertions passed. Fixtures exercise production CSS and real MutationObservers, but do not establish live YouTube compatibility or actual browser performance.
+- The user reported slower YouTube browsing before the event-driven fix. Repeated visibility measurements were a plausible cause; no profiler capture proved causation, and the user has not yet confirmed improvement after the fix.
+- Next step: reload the extension **and refresh existing YouTube tabs**, compare browsing performance, and check ordinary videos, playlists, live chat, end screens, theater/fullscreen, and in-app navigation in the target browsers. Wait for local validation before a version bump, packaging, or signing a new release.
+- Local decision history is in `DESIGN-DECISIONS.local.md`, excluded using `.git/info/exclude`. If present, read it for rationale and append meaningful decisions. Keep it untracked and out of release archives; do not copy the private log into tracked docs.
+
 ## The Extension
 
 Lives in `extension/`. Works in Chrome, Edge, Brave and Firefox 121+. Plain JavaScript, no build step, no dependencies.
@@ -39,6 +48,17 @@ Two layers enforce the settings, because neither is enough alone:
 
 The popup (`popup.html/css/js`) writes to `chrome.storage.local`. Both layers watch storage, so a change applies right away to open tabs.
 
+### YouTube sidebar lifecycle and performance
+
+`youtube-layout.js` keeps `#secondary` when a playlist, live chat, engagement panel, or content in a known auxiliary panel container is visible. Otherwise, Suggested videos blocking collapses it with CSS. Hidden placeholders do not count; DOM nodes are retained so YouTube can reuse them.
+
+- `content.js` requests checks after settings load/change, DOM readiness, `yt-navigate-finish`, `pageshow`, and resize. Sidebar observation is active only on `/watch` while Suggested videos is blocked and the whole site is allowed.
+- `pfCreateYoutubeLayoutWatcher` groups requests with `requestAnimationFrame`. Its panel observer filters visibility/content changes; its structure observer finds late or replacement columns. Before a watch-page shell exists, discovery temporarily observes document construction.
+- Ignore recommendation-feed mutations and irrelevant decorative attributes. Disconnect observers while clearing/applying PureFocus's collapse class, then reattach, so our own updates cannot create a feedback loop. Disabling blocking or leaving the watch page disconnects observation.
+- The 250 ms fallback compares only `location.href` on an unchanged page. **Do not restore repeated DOM scans or geometry measurements to that timer.** Different videos can share `/watch` and differ only in the query string.
+- Visibility uses hidden/ARIA/engagement state, computed visibility, and element rectangles. Clear our collapse class synchronously before measuring so our own hiding does not conceal useful panels; finish before painting.
+- YouTube markup can change. New panel containers may require updating the helper as well as `content.css`. Preserve playlists/chat rather than hiding the whole column unconditionally.
+
 ### Files
 
 | File | Purpose |
@@ -63,12 +83,14 @@ The popup (`popup.html/css/js`) writes to `chrome.storage.local`. Both layers wa
 
 ## Development
 
-- **Run it**: Chrome: `chrome://extensions` → Developer mode → Load unpacked → pick `extension/`. Firefox: `about:debugging` → This Firefox → Load Temporary Add-on → pick `manifest.json`. Reload the extension after every edit.
+- **Run it**: Chrome: `chrome://extensions` → Developer mode → Load unpacked → pick `extension/`. Firefox: `about:debugging` → This Firefox → Load Temporary Add-on → pick `manifest.json`. Reload the extension and refresh existing affected-site tabs after edits so old content scripts are replaced.
 - **Build / install deps / linter**: none. Node 18+ is only a development test tool, not an extension dependency.
 - **Tests**: from the root, run `node tests/extension.test.cjs` for mocked browser-API tests. Open `tests/preview.html` in Firefox/Chromium for visual toggles and browser assertions using the production stylesheet and sidebar visibility helper. The extension README describes live YouTube checks; fixtures alone cannot verify current YouTube markup.
 - **Package for Firefox**: `cd extension && zip -r ../purefocus.zip . -x '.*'` (`manifest.json` must be at the zip's top level).
 
 ## Releasing (Firefox)
+
+Complete local feature and performance checks first. Package only the contents of `extension/`, never the repository root; tests and local decision notes must not enter the archive.
 
 Signed through addons.mozilla.org as an **unlisted** add-on (free, not shown on the store). Regular Firefox only keeps signed add-ons, and `xpinstall.signatures.required` is ignored outside Developer Edition and Nightly.
 

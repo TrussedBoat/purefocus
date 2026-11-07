@@ -27,7 +27,7 @@ The three recommendation switches default to blocked, including when upgrading a
 3. Click **Load unpacked** and select this `extension/` folder.
 4. Pin PureFocus from the puzzle-piece menu so its icon stays in the toolbar.
 
-After editing any file, click the reload icon on the extension's card.
+After editing any file, click the reload icon on the extension's card, then refresh existing YouTube and other affected-site tabs to replace their old content scripts.
 
 ## Install (Firefox 121 or newer)
 
@@ -48,7 +48,7 @@ PureFocus now appears under **Temporary Extensions**. To put its icon in the too
 
 **Things to know about temporary add-ons**
 - It's removed when Firefox closes. Repeat the steps after each restart. Your switch settings are kept, because the add-on has a fixed ID.
-- After editing a file, click **Reload** on its card in `about:debugging`.
+- After editing a file, click **Reload** on its card in `about:debugging`, then refresh existing affected-site tabs.
 - If something doesn't work, click **Inspect** on the card to open the add-on's console and see its errors.
 
 To install it permanently, it has to be signed through [addons.mozilla.org](https://addons.mozilla.org/developers/). You can sign it for your own use without publishing it on the store.
@@ -61,6 +61,7 @@ To install it permanently, it has to be signed through [addons.mozilla.org](http
 | `settings.js` | The list of options and their defaults, shared by the other scripts |
 | `popup.html`, `popup.css`, `popup.js` | The settings panel that opens from the toolbar icon |
 | `background.js` | Turns the settings into Chrome blocking and redirect rules |
+| `youtube-layout.js` | Preserves useful visible sidebar panels and collapses empty recommendation columns using event-driven checks |
 | `content.js` | Runs inside the blocked sites and enforces the settings there, including navigation the network rules miss |
 | `blocked.html` | The page shown when a blocked site is caught inside the page |
 | `content.css` | Hides blocked sections and YouTube recommendation surfaces |
@@ -93,6 +94,12 @@ Replace the four files in `icons/` with your own, keeping the same names and siz
 2. For URL blocking or redirects, add its rule to `buildRules` in `background.js`. Presentation-only options need no network rule.
 3. Add its domain to `host_permissions`, `content_scripts.matches` and `web_accessible_resources.matches` in `manifest.json`, and to `SITE` in `content.js`.
 
+## Development status (2026-11-07)
+
+The YouTube recommendation controls are being tested on `feature/youtube-recommendation-blocking`. The manifest remains at `0.2.0`; the existing signed `releases/purefocus-0.2.0.xpi` does not include this unreleased work. Use the unpacked/temporary extension from the checkout to test it.
+
+The latest implementation passed nine Node tests and 225 browser fixture assertions on 2026-11-06. Live end-screen checks, target-browser checks, and confirmation of browsing performance after the sidebar optimization remain pending. A new release will follow successful local validation.
+
 ## Tests and visual preview
 
 The extension still has no build step or runtime dependencies. Node is only used to run development tests.
@@ -120,4 +127,12 @@ Fixtures check CSS behavior against representative markup; they cannot detect Yo
 
 The sidebar visibility helper in `youtube-layout.js` checks on initial load, navigation, settings changes, resizing, and relevant sidebar mutations. It preserves visible playlists, live chat, and auxiliary panels. Hidden placeholders do not keep an empty column open. Changes are grouped into one rendering frame, recommendation-feed mutations are ignored, and observers disconnect while applying our own layout classes to avoid feedback loops. The existing URL fallback only compares the URL while a page is unchanged; it does no sidebar scans or layout measurements.
 
-Keep selector fixes in `content.css`, and update the fixtures to represent any new markup variant.
+Keep CSS selector fixes in `content.css`; update `youtube-layout.js` when useful panel containers or visibility signals change. Update the fixtures to represent any new markup variant.
+
+### Performance checks
+
+A previous implementation restored and measured the sidebar every 250 ms. After a report of slower browsing, it was replaced with event-driven checks. The slowdown's cause was not confirmed by profiling, and improvement in the user's browser still needs verification.
+
+Reload the extension and refresh YouTube before comparing. Browse the same videos and check scrolling and in-app navigation with Suggested videos blocking enabled and disabled. If needed, compare with PureFocus disabled as well. Changing a switch applies settings immediately, but refreshing is necessary after replacing extension code.
+
+The idle regression test performs 1,000 unchanged URL checks without extra sidebar measurements. This guards against repeated work; it is not a benchmark of real YouTube performance.
