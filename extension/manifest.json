@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "PureFocus",
-  "version": "0.2.0",
-  "description": "Blocks distracting sites, or just their short-video sections.",
+  "version": "0.3.0",
+  "description": "Blocks distracting sites, short-video sections, and YouTube recommendations.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
